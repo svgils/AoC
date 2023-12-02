@@ -12,7 +12,7 @@ fn main() {
         blue: u32,
     }
 
-    let mut game_map: HashMap<u16, Colors> = HashMap::new();
+    let mut game_map: HashMap<u16, HashMap<&str, u32>> = HashMap::new();
 
     lines.for_each(|line| {
         if !line.is_empty() {
@@ -28,11 +28,7 @@ fn main() {
 
             game_map.insert(
                 game_num,
-                Colors {
-                    red: 0,
-                    green: 0,
-                    blue: 0,
-                },
+                HashMap::from([("red", 0), ("green", 0), ("blue", 0)]),
             );
 
             split.last().unwrap().split("; ").for_each(|part| {
@@ -43,20 +39,16 @@ fn main() {
                         vals.clone().last().unwrap(),
                         vals.next().unwrap().parse::<u32>().unwrap(),
                     );
-                    if subset_map.contains_key("red") && subset_map["red"] > game_map[&game_num].red
-                    {
-                        game_map.get_mut(&game_num).unwrap().red = subset_map["red"];
-                    };
-                    if subset_map.contains_key("green")
-                        && subset_map["green"] > game_map[&game_num].green
-                    {
-                        game_map.get_mut(&game_num).unwrap().green = subset_map["green"];
-                    };
-                    if subset_map.contains_key("blue")
-                        && subset_map["blue"] > game_map[&game_num].blue
-                    {
-                        game_map.get_mut(&game_num).unwrap().blue = subset_map["blue"];
-                    };
+                    subset_map.iter().for_each(|element| {
+                        let num = element.1.clone();
+                        if element.1 > &game_map[&game_num][element.0] {
+                            game_map
+                                .get_mut(&game_num)
+                                .unwrap()
+                                .entry(element.0)
+                                .and_modify(|e| *e = num);
+                        }
+                    });
                 })
             })
         }
@@ -65,7 +57,7 @@ fn main() {
     let mut possible_games_sum = 0;
 
     game_map.iter().for_each(|entry| {
-        if entry.1.red <= 12 && entry.1.green <= 13 && entry.1.blue <= 14 {
+        if entry.1["red"] <= 12 && entry.1["green"] <= 13 && entry.1["blue"] <= 14 {
             possible_games_sum += entry.0;
         }
     });
@@ -74,7 +66,7 @@ fn main() {
     let mut running_set_power = 0;
 
     game_map.iter().for_each(|entry| {
-        running_set_power += entry.1.red * entry.1.green * entry.1.blue;
+        running_set_power += entry.1["red"] * entry.1["green"] * entry.1["blue"];
     });
 
     println!("Part 2: {}", running_set_power);

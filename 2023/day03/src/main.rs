@@ -3,13 +3,8 @@ use std::{collections::HashMap, fs};
 
 const INPUT: &str = "./input";
 
-struct Symbol {
-    pos: usize,
-    symbol: String,
-}
-
-fn find_adj(input: &str, m: regex::Match, length: usize, pattern: &str) -> Vec<Symbol> {
-    let mut symbols = Vec::<Symbol>::new();
+fn find_adj(input: &str, m: regex::Match, length: usize, pattern: &str) -> Vec<usize> {
+    let mut symbols = Vec::<usize>::new();
 
     let re = Regex::new(pattern).unwrap();
     let line_start = m.start() as i64 / length as i64 * length as i64;
@@ -26,13 +21,10 @@ fn find_adj(input: &str, m: regex::Match, length: usize, pattern: &str) -> Vec<S
     ) as usize;
 
     if let Some(s) = re.find(&input[start..end + 1]) {
-        symbols.push(Symbol {
-            pos: s.start() + start,
-            symbol: String::from(s.as_str()),
-        });
+        symbols.push(s.start() + start);
     }
 
-    // Check below
+    // Search below
     if m.start() + length < input.len() {
         let start = (m.start() as i64 + length as i64 - 1)
             .clamp(line_start + length as i64, line_end + length as i64)
@@ -41,36 +33,24 @@ fn find_adj(input: &str, m: regex::Match, length: usize, pattern: &str) -> Vec<S
             .clamp(line_start + length as i64, line_end + length as i64) as usize;
 
         if let Some(s) = re.find(&input[start..end + 1]) {
-            symbols.push(Symbol {
-                pos: s.start() + start,
-                symbol: String::from(s.as_str()),
-            });
+            symbols.push(s.start() + start);
         }
     }
 
+    // Search left
     if m.start() > line_start as usize {
-        if let Some(s) = re.find(
-            &input[(((m.start() as i64 - 1) as usize).clamp(line_start as usize, line_end as usize)
-                as usize)
-                ..(((m.start() as i64) as usize).clamp(line_start as usize, line_end as usize)
-                    as usize)],
-        ) {
-            symbols.push(Symbol {
-                pos: m.start() - 1,
-                symbol: String::from(s.as_str()),
-            });
+        if re
+            .find(&input[(m.start() as i64 - 1) as usize..m.start()])
+            .is_some()
+        {
+            symbols.push(m.start() - 1);
         }
     }
 
+    // Search right
     if m.end() < line_end as usize {
-        if let Some(s) = re.find(
-            &input[((m.end()).clamp(line_start as usize, line_end as usize) as usize)
-                ..((m.end() + 1).clamp(line_start as usize, line_end as usize) as usize)],
-        ) {
-            symbols.push(Symbol {
-                pos: m.end(),
-                symbol: String::from(s.as_str()),
-            });
+        if re.find(&input[m.end()..m.end() + 1]).is_some() {
+            symbols.push(m.end());
         }
     }
 
@@ -82,60 +62,10 @@ fn part1(input: &str) -> usize {
     let re = Regex::new(r"\d+").unwrap();
     let mut number_sum: usize = 0;
     re.find_iter(&input).for_each(|m| {
-        let re2 = Regex::new(r"[^\.\d]").unwrap();
-        let line_start = m.start() as i64 / length as i64 * length as i64;
-        let line_end = line_start + length as i64 - 2;
+        let matches = find_adj(input, m, length, r"[^\.\d]");
 
-        let start = (m.start() as i64 - length as i64 - 1).clamp(
-            (line_start - length as i64).clamp(0, input.len() as i64),
-            (line_end - length as i64).clamp(0, input.len() as i64),
-        ) as usize;
-        let end = (m.end() as i64 - length as i64).clamp(
-            (line_start - length as i64).clamp(0, input.len() as i64),
-            (line_end - length as i64).clamp(0, input.len() as i64),
-        ) as usize;
-
-        if (re2.find(&input[start..end + 1])).is_some() {
-            number_sum += m.as_str().parse::<usize>().unwrap();
-            return;
-        }
-
-        if m.start() + length < input.len() {
-            let start = (m.start() as i64 + length as i64 - 1)
-                .clamp(line_start + length as i64, line_end + length as i64)
-                as usize;
-            let end = (m.end() as i64 + length as i64)
-                .clamp(line_start + length as i64, line_end + length as i64)
-                as usize;
-
-            if (re2.find(&input[start..end + 1])).is_some() {
-                number_sum += m.as_str().parse::<usize>().unwrap();
-                return;
-            }
-        }
-
-        if re2
-            .find(
-                &input[(((m.start() as i64 - 1) as usize)
-                    .clamp(line_start as usize, line_end as usize) as usize)
-                    ..(((m.start() as i64) as usize).clamp(line_start as usize, line_end as usize)
-                        as usize)],
-            )
-            .is_some()
-        {
-            number_sum += m.as_str().parse::<usize>().unwrap();
-            return;
-        }
-
-        if re2
-            .find(
-                &input[((m.end()).clamp(line_start as usize, line_end as usize) as usize)
-                    ..((m.end() + 1).clamp(line_start as usize, line_end as usize) as usize)],
-            )
-            .is_some()
-        {
-            number_sum += m.as_str().parse::<usize>().unwrap();
-            return;
+        if matches.len() > 0 {
+            number_sum += m.as_str().parse::<usize>().unwrap()
         }
     });
     return number_sum;
@@ -148,7 +78,7 @@ fn part2(input: &str) -> usize {
     re.find_iter(input).for_each(|m| {
         let symbols = find_adj(input, m, length, r"\*");
         symbols.iter().for_each(|s| {
-            let entry = gear_map.entry(s.pos).or_insert(vec![]);
+            let entry = gear_map.entry(*s).or_insert(vec![]);
             entry.push(m.as_str().parse::<u16>().unwrap());
         });
     });

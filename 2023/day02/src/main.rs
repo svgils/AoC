@@ -6,12 +6,6 @@ fn main() {
 
     let lines = input.split("\n");
 
-    struct Colors {
-        red: u32,
-        green: u32,
-        blue: u32,
-    }
-
     let mut game_map: HashMap<u16, HashMap<&str, u32>> = HashMap::new();
 
     lines.for_each(|line| {

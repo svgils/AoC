@@ -7,9 +7,9 @@ use std::{
 const INPUT: &str = "./input";
 
 struct MapItem {
-    source: u64,
-    dest: u64,
-    range: u64,
+    source: i64,
+    dest: i64,
+    range: i64,
 }
 
 fn main() {
@@ -17,11 +17,11 @@ fn main() {
     let mut sections = input.split("\n\n");
     let digit_re = Regex::new(r"\d+").unwrap();
     let key_re = Regex::new(r"[a-z_]+").unwrap();
-    let seeds: Vec<u64> = digit_re
+    let seeds: Vec<i64> = digit_re
         .find_iter(sections.next().unwrap())
         .map(|x| x.as_str().parse().unwrap())
         .collect();
-    let mut seed_ranges: Vec<(u64, u64)> = Vec::new();
+    let mut seed_ranges: Vec<(i64, i64)> = Vec::new();
     for i in (0..seeds.len()).step_by(2) {
         seed_ranges.push((seeds[i].clone(), seeds[i + 1].clone()))
     }
@@ -33,9 +33,9 @@ fn main() {
                 String::from(key),
                 lines
                     .filter_map(|l| {
-                        let vals: Vec<u64> = digit_re
+                        let vals: Vec<i64> = digit_re
                             .find_iter(l)
-                            .map(|m| m.as_str().parse::<u64>().unwrap())
+                            .map(|m| m.as_str().parse().unwrap())
                             .collect();
                         if vals.len() == 0 {
                             return None;
@@ -51,7 +51,7 @@ fn main() {
         })
         .collect();
 
-    let res1: Vec<u64> = seeds
+    let res1: Vec<i64> = seeds
         .iter()
         .map(|seed| {
             maps.iter()
@@ -59,7 +59,7 @@ fn main() {
                     return map
                         .1
                         .iter()
-                        .find_map(|map_item| -> Option<u64> {
+                        .find_map(|map_item| -> Option<i64> {
                             if (map_item.source..(map_item.source + map_item.range + 1))
                                 .contains(&seed)
                             {
@@ -73,17 +73,17 @@ fn main() {
         })
         .collect();
 
-    let res2: Vec<(u64, u64)> = maps.iter().fold(seed_ranges, |map_acc, map| {
-        let mut moved_ranges: Vec<(u64, u64)> = Vec::new();
+    // Loop over every map and collect back into a list of ranges.
+    let res2: Vec<(i64, i64)> = maps.iter().fold(seed_ranges, |map_acc, map| {
+        let mut moved_ranges: Vec<(i64, i64)> = Vec::new();
+        // Loop over every item in map and add moved ranges to seperate list.
         let mut split_ranges = map.1.iter().fold(map_acc, |item_acc, item| {
+            // Loop over every range and split into 0 or more new ranges,
+            // to be consumed by the next map item.
             item_acc
                 .iter()
                 .flat_map(|range| {
-                    let mut new_ranges: Vec<(u64, u64)> = Vec::new();
-                    let range_start = range.0 as i64;
-                    let range_end = (range.0 + range.1) as i64;
-                    let source_start = item.source as i64;
-                    let source_end = (item.source + item.range) as i64;
+                    let mut new_ranges: Vec<(i64, i64)> = Vec::new();
 
                     // Seeds that fall below the map range.
                     if range.0 < item.source {
@@ -93,18 +93,18 @@ fn main() {
                     // Seeds that fall inside the map range.
                     if range.0 < item.source + item.range && range.0 + range.1 > item.source {
                         let new_range = (
-                            item.dest + max(range.0 as i64 - item.source as i64, 0) as u64,
-                            (range_end.clamp(source_start, source_end)
-                                - range_start.clamp(source_start, source_end))
-                                as u64,
+                            item.dest + max(range.0 - item.source, 0),
+                            ((range.0 + range.1).clamp(item.source, item.source + item.range)
+                                - range.0.clamp(item.source, item.source + item.range)),
                         );
+                        // Move to moved_ranges so this range doesnt get evaluated on next iteration.
                         moved_ranges.push(new_range);
                     }
                     // Seeds that fall above the map range.
                     if range.0 + range.1 > item.source + item.range {
                         let new_range = (
                             max(range.0, item.source + item.range),
-                            min(range.1 as i64, range_end - source_end) as u64,
+                            min(range.1, (range.0 + range.1) - (item.source + item.range)),
                         );
                         new_ranges.push(new_range);
                     }
@@ -112,6 +112,7 @@ fn main() {
                 })
                 .collect::<Vec<_>>()
         });
+        // Pass both the moved ranges and the unmoved ranges to the next map.
         split_ranges.append(&mut moved_ranges);
         return split_ranges;
     });
@@ -121,7 +122,7 @@ fn main() {
         "Part 2: {}",
         res2.iter()
             .map(|r| r.0)
-            .collect::<Vec<u64>>()
+            .collect::<Vec<i64>>()
             .iter()
             .min()
             .unwrap()

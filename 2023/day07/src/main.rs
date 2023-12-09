@@ -109,8 +109,8 @@ fn main() {
                         '7' => 7,
                         '8' => 8,
                         '9' => 9,
-                        'J' => 10,
-                        'T' => 11,
+                        'T' => 10,
+                        'J' => 11,
                         'Q' => 12,
                         'K' => 13,
                         'A' => 14,
@@ -134,32 +134,33 @@ fn main() {
             let cards = parts.next().unwrap();
             let stake: i64 = parts.last().unwrap().parse().unwrap();
             let mut num_j = 0;
-            let card_map: HashMap<char, i32> = cards.chars().fold(HashMap::new(), |mut acc, c| {
-                if c == 'J' {
-                    num_j += 1;
-                    // *acc.entry(c).or_insert(0) += 1;
-                } else {
-                    *acc.entry(c).or_insert(0) += 1;
-                }
-                return acc;
-            });
-            // println!("{:?}", card_map);
-            let mut card_nums = card_map.into_values().collect::<Vec<i32>>();
-            card_nums.sort_unstable();
-            card_nums.reverse();
+            let mut card_map: Vec<i32> = cards
+                .chars()
+                .fold(HashMap::new(), |mut acc, c| {
+                    if c == 'J' {
+                        num_j += 1;
+                    } else {
+                        *acc.entry(c).or_insert(0) += 1;
+                    }
+                    return acc;
+                })
+                .into_values()
+                .collect::<Vec<i32>>();
+            card_map.sort_unstable();
+            card_map.reverse();
             let hand_type = if num_j == 5 {
                 HandType::FiveOAKind
-            } else if card_nums[0] + num_j == 5 {
+            } else if card_map[0] + num_j == 5 {
                 HandType::FiveOAKind
-            } else if card_nums[0] + num_j == 4 {
+            } else if card_map[0] + num_j == 4 {
                 HandType::FourOAKind
-            } else if card_nums[0] + num_j == 3 && card_nums[1] == 2 {
+            } else if card_map[0] + num_j == 3 && card_map[1] == 2 {
                 HandType::FullHouse
-            } else if card_nums[0] + num_j == 3 {
+            } else if card_map[0] + num_j == 3 {
                 HandType::ThreeOAKind
-            } else if card_nums[0] + num_j == 2 && card_nums[1] == 2 {
+            } else if card_map[0] + num_j == 2 && card_map[1] == 2 {
                 HandType::TwoPair
-            } else if card_nums[0] + num_j == 2 {
+            } else if card_map[0] + num_j == 2 {
                 HandType::OnePair
             } else {
                 HandType::HighCard
@@ -190,10 +191,6 @@ fn main() {
             });
         })
         .collect();
-
-    // for hand in &mut hands_part2 {
-    //     println!("{:?} {:?}", hand.cards, hand.hand_type);
-    // }
 
     hands_part1.sort_unstable();
     hands_part1.reverse();

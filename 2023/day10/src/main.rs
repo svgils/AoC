@@ -80,7 +80,7 @@ fn main() {
             (pos.1 as i64 + offset_map[direction].1) as usize,
         )
     };
-    let index_map = |pos: (usize, usize)| -> char { input[pos.0][pos.1] };
+    let index_map = |pos: (usize, usize)| -> char { input[pos.1][pos.0] };
 
     let mut starts: Vec<&Direction> = vec![];
     if start.1 != 0
@@ -113,15 +113,12 @@ fn main() {
     loop {
         for walker in &mut walkers {
             let next = next_point(&walker.1, walker.0);
-            println!("Next: {:?}", next);
             walker.0 = next;
             walker.1 = next_direction(&walker.1, &index_map(next));
         }
         steps += 1;
-        if walkers
-            .windows(2)
-            .fold(true, |acc, w| acc && (w[0].0 != w[1].0))
-        {
+
+        if walkers[0].0 == walkers[1].0 {
             break;
         }
     }

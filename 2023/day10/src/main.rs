@@ -139,8 +139,6 @@ fn main() {
         inside_tiles: HashSet<(usize, usize)>,
     }
 
-    println!("{:?}", starts);
-
     let mut walkers = vec![
         Walker {
             pos: start,
@@ -155,7 +153,6 @@ fn main() {
             inside_tiles: HashSet::new(),
         },
     ];
-    // Find 2 possible start directions
 
     let mut visited_tiles: HashSet<(usize, usize)> = HashSet::new();
     let mut steps = 0;
@@ -167,19 +164,14 @@ fn main() {
             walker.dir = next_direction(walker.dir, &index_map(next), &mut direction_map);
             walker.rotation += (walker.dir as i16 * 90 - old_dir as i16 * 90) % 180;
             // Add tile to right to inside tiles list
-            // println!("{:?}{}", old_dir, old_dir as u8);
             let right1 = next_point(&Direction::from_u8((walker.dir as u8 + 1) % 4), walker.pos);
             let right2 = next_point(&Direction::from_u8((old_dir as u8 + 1) % 4), walker.pos);
-            // println!("Right: {:?}", right1);
             if right1.0 < (input[0].len() - 1) && right1.1 < (input.len() - 1) {
-                println!("Adding {:?} to inside", right1);
                 walker.inside_tiles.insert(right1);
             }
             if right2.0 < (input[0].len() - 1) && right2.1 < (input.len() - 1) {
-                println!("Adding {:?} to inside", right2);
                 walker.inside_tiles.insert(right2);
             }
-            println!("Adding {:?} to visited", walker.pos);
             visited_tiles.insert(walker.pos);
         }
         steps += 1;
@@ -193,50 +185,46 @@ fn main() {
     }
 
     let clockwise_walker = if walkers[0].rotation > 0 {
-        &walkers[0]
+        &mut walkers[0]
     } else {
-        &walkers[1]
+        &mut walkers[1]
     };
 
-    let mut fill_map: HashMap<(usize, usize), bool> = HashMap::new();
-    let mut open = false;
-    let mut was_prev_open = false;
-    for y in 0..input.len() {
-        for x in 0..input[0].len() {
-            if visited_tiles.contains(&(x, y)) {
-                *fill_map.entry((x, y)).or_insert(false) = false;
-            } else {
-                *fill_map.entry((x, y)).or_insert(open) = open;
+    let mut inside_tiles = clockwise_walker.inside_tiles.clone();
+    loop {
+        let mut missing: HashSet<(usize, usize)> = HashSet::new();
+        for tile in inside_tiles {
+            let north = next_point(&Direction::North, tile);
+            let east = next_point(&Direction::East, tile);
+            let south = next_point(&Direction::South, tile);
+            let west = next_point(&Direction::West, tile);
+
+            if !visited_tiles.contains(&north) && clockwise_walker.inside_tiles.contains(&north) {
+                missing.insert(north);
+            }
+            if !visited_tiles.contains(&east) && clockwise_walker.inside_tiles.contains(&east) {
+                missing.insert(north);
+            }
+            if !visited_tiles.contains(&south) && clockwise_walker.inside_tiles.contains(&south) {
+                missing.insert(north);
+            }
+            if !visited_tiles.contains(&west) && clockwise_walker.inside_tiles.contains(&west) {
+                missing.insert(north);
             }
         }
-    }
-    let mut open = false;
-    let mut was_prev_open = false;
-    for x in 0..input[0].len() {
-        for y in 0..input.len() {
-            if visited_tiles.contains(&(x, y)) {
-                if !was_prev_open {
-                    open = !open;
-                    was_prev_open = open;
-                }
-                // *fill_map.entry((x, y)).or_insert(false) = false;
-            } else {
-                was_prev_open = false;
-                *fill_map.entry((x, y)).or_insert(open) &= open;
-            }
+
+        if missing.is_empty() {
+            break;
+        } else {
+            clockwise_walker.inside_tiles.extend(&missing);
+            inside_tiles = missing.clone();
         }
     }
 
-    // let unique: HashSet<&(usize, usize)> = clockwise_walker
-    //     .inside_tiles
-    //     .difference(&visited_tiles)
-    //     .collect();
-    let mut sum = 0;
-    for val in fill_map.iter() {
-        if *val.1 {
-            sum += 1;
-        }
-    }
+    let unique: HashSet<&(usize, usize)> = clockwise_walker
+        .inside_tiles
+        .difference(&visited_tiles)
+        .collect();
 
-    println!("Part 2: {}", sum);
+    println!("Part 2: {}", unique.len());
 }

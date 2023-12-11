@@ -190,26 +190,27 @@ fn main() {
         &mut walkers[1]
     };
 
+    // Remove all tiles on the path from the collection of inside tiles.
+    clockwise_walker.inside_tiles = clockwise_walker
+        .inside_tiles
+        .difference(&visited_tiles)
+        .map(|e| *e)
+        .collect();
+
+    // Fill in all remaining inside tiles that are more than 1 tiles seperated from the path.
     let mut inside_tiles = clockwise_walker.inside_tiles.clone();
     loop {
         let mut missing: HashSet<(usize, usize)> = HashSet::new();
         for tile in inside_tiles {
-            let north = next_point(&Direction::North, tile);
-            let east = next_point(&Direction::East, tile);
-            let south = next_point(&Direction::South, tile);
-            let west = next_point(&Direction::West, tile);
-
-            if !visited_tiles.contains(&north) && clockwise_walker.inside_tiles.contains(&north) {
-                missing.insert(north);
-            }
-            if !visited_tiles.contains(&east) && clockwise_walker.inside_tiles.contains(&east) {
-                missing.insert(north);
-            }
-            if !visited_tiles.contains(&south) && clockwise_walker.inside_tiles.contains(&south) {
-                missing.insert(north);
-            }
-            if !visited_tiles.contains(&west) && clockwise_walker.inside_tiles.contains(&west) {
-                missing.insert(north);
+            for i in 0..4 {
+                let next = next_point(&Direction::from_u8(i), tile);
+                if next.0 < input[0].len() - 1 && next.1 < input.len() - 1 {
+                    if !visited_tiles.contains(&next)
+                        && !clockwise_walker.inside_tiles.contains(&next)
+                    {
+                        missing.insert(next);
+                    }
+                }
             }
         }
 
@@ -221,10 +222,5 @@ fn main() {
         }
     }
 
-    let unique: HashSet<&(usize, usize)> = clockwise_walker
-        .inside_tiles
-        .difference(&visited_tiles)
-        .collect();
-
-    println!("Part 2: {}", unique.len());
+    println!("Part 2: {}", clockwise_walker.inside_tiles.len());
 }

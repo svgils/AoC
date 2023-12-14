@@ -76,23 +76,11 @@ fn main() {
     let platform: Vec<Vec<char>> = fs::read_to_string(INPUT)
         .unwrap()
         .split("\n")
-        .enumerate()
         .filter_map(|l| {
-            if l.1.is_empty() {
+            if l.is_empty() {
                 return None;
             }
-            l.1.chars()
-                .enumerate()
-                .map(|c| {
-                    if c.1 == '#' {
-                        return Some('#');
-                    } else if c.1 == '.' {
-                        return Some('.');
-                    } else {
-                        return Some('O');
-                    }
-                })
-                .collect()
+            Some(l.chars().collect())
         })
         .collect();
 

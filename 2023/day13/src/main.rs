@@ -43,13 +43,12 @@ fn main() {
                     equal &= eq;
                 }
             }
-            if differrent <= 1 && !p2_satisfied {
+            if differrent == 1 && !p2_satisfied {
                 new_res.1 = acc.1 + x + 1;
                 p2_satisfied = true;
             }
             if equal {
                 new_res.0 = acc.0 + x + 1;
-                break;
             }
         }
 
@@ -65,13 +64,12 @@ fn main() {
                     equal &= eq;
                 }
             }
-            if differrent <= 1 && !p2_satisfied {
+            if differrent == 1 && !p2_satisfied {
                 new_res.1 = acc.1 + ((y + 1) * 100);
                 p2_satisfied = true;
             }
             if equal {
                 new_res.0 = acc.0 + ((y + 1) * 100);
-                break;
             }
         }
         return new_res;
